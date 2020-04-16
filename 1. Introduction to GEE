@@ -1,0 +1,28 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imageCollection = ee.ImageCollection("ECMWF/ERA5/DAILY"),
+    DEM = ee.Image("USGS/SRTMGL1_003"),
+    imageVisParam = {"opacity":0.64,"bands":["mean_2m_air_temperature"],"min":269.2474670410156,"max":314.9959411621094,"palette":["10ffde","04ff46","b6ff04","fff68b","f0ff06","ffa345","ff0606"]},
+    DEMvis = {"opacity":0.75,"bands":["elevation"],"min":-29,"max":5371,"palette":["c30aff","2c06ff","06ff25","fcff2b","ff420a"]},
+    SLOPEvis = {"opacity":1,"bands":["slope"],"max":60,"palette":["0cff35","102dff","ff8454","ff1d06","ff0858"]};
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+// Introduction to Google Earth Engine ~ Kshitij Dahal //
+var temperature_max = imageCollection.filterDate('2019-01-01','2019-12-31').max();
+var temperature_min = imageCollection.filterDate('2019-01-01','2019-12-31').min();
+var temperature_mean = imageCollection.filterDate('2019-01-01','2019-12-31').mean();
+// Add layers for visualization //
+Map.addLayer(temperature_max, imageVisParam, 'Daily max temperature', false);
+Map.addLayer(temperature_min, imageVisParam, 'Daily min temperature',false);
+Map.addLayer(temperature_mean, imageVisParam, 'Daily average temperature',false);
+// Add digital elevation Model //
+Map.addLayer(DEM, DEMvis, 'Digital Elevation Model', false);
+// Calculate DEM derivatives
+var slope = ee.Terrain.slope(DEM);
+var aspect = ee.Terrain.aspect(DEM);
+var hillshade = ee.Terrain.hillshade(DEM,45,20);
+// Add DEM derivatives //
+Map.addLayer(slope, SLOPEvis, 'Slope', false);
+Map.addLayer(aspect, {}, 'Aspect', false);
+Map.addLayer(hillshade,{}, 'Hillshade', false);
+// Write me at kshitijdahal3@gmail.com //
+// Thank you //
