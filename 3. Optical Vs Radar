@@ -1,0 +1,35 @@
+// Demonstrate the difference between optical imagery and radar backscatter//
+function configureMap(_collection, _vis_params, _label, label_position) {
+  var _map = ui.Map();
+  _map.addLayer(_collection, _vis_params, _label);
+  _map.add(ui.Label(_label, {position:label_position}));
+  return _map;
+}
+// Define the time interval.
+var start_date = ee.Date('2019-07-21');
+var end_date = start_date.advance(10, 'days');
+var date_filter = ee.Filter.date(start_date, end_date);
+// Configure the left map.
+var label1 = 'optical imagery (COPERNICUS/S2)';
+var collection1 = ee.ImageCollection('COPERNICUS/S2').filter(date_filter);
+var vis_params1 = {bands:'B4,B3,B2', min:0, max:3000};
+// Configure the right map.
+var label2 = 'SAR Backscatter (COPERNICUS/S1_GRD)';
+var collection2 = ee.ImageCollection('COPERNICUS/S1_GRD')
+        .filter(date_filter)
+        .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+        .filter(ee.Filter.eq('instrumentMode', 'IW'))
+        .filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING'));
+var vis_params2 = {bands:'VV', min:-25, max:5};
+// Create the map objects, link them, and display them.
+var map1 = configureMap(collection1, vis_params1, label1, 'middle-left');
+var map2 = configureMap(collection2, vis_params2, label2, 'middle-right');
+var linker = ui.Map.Linker([map1,map2]);
+var split_panel = ui.SplitPanel({
+  firstPanel: map1,
+  secondPanel: map2,
+  wipe: true,
+});
+map1.setCenter(85.29557, 27.71366,11 );  // Kathmandu Area
+// Add the split panel to the UI.
+ui.root.widgets().reset([split_panel]);
