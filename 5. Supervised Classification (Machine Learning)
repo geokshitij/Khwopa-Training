@@ -1,0 +1,18 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var imageCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
+    roi = /* color: #d63000 */ee.Geometry.Point([87.2560143033203, 26.447614584117837]),
+    imageVisParam = {"opacity":1,"bands":["B4","B3","B2"],"min":0.06005484238266945,"max":0.17998048663139343,"gamma":1};
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Project- Landuse/ Landcover Mapping using Landsat image//
+//Instructor- Kshitij Dahal//
+//Email- kshitijdahal3@gmail.com//
+// Select an image from collection
+var landsat = imageCollection.filterDate('2015-01-01','2015-12-10')
+              .filterBounds(roi).sort('CLOUD_COVER').first();
+// Print the information about selected image
+print ('Selected image is: ', landsat);
+// Add selected image to map
+Map.addLayer(landsat,imageVisParam,'Landsat-image');
+Map.addLayer(landsat,{ bands:'B5,B6,B2', min: 0, max: 0.3},'Landsat-false-color');
+// Set the viewing window of map
+Map.centerObject(roi,11);
