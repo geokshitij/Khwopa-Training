@@ -1,0 +1,32 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var region = 
+    /* color: #d63000 */
+    /* shown: false */
+    ee.Geometry.Polygon(
+        [[[84.55569312734902, 28.571698121476274],
+          [84.0050019335624, 26.64371998927929],
+          [86.04835594797278, 26.264999998931],
+          [86.51772727035227, 28.116588185782284]]]),
+    imageCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
+    roi = 
+    /* color: #d63000 */
+    /* shown: false */
+    ee.Geometry.Point([85.40774890366033, 27.67322307704838]),
+    imageVisParam = {"opacity":1,"bands":["B4","B3","B2"],"min":0.007234884271048292,"max":0.13112942461487684,"gamma":1};
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+// Introduction to unsupervised Classification ~ Kshitij Dahal
+var image = imageCollection.filterBounds(roi).sort("CLOUD_COVER").first()
+
+//Center the object in Map
+Map.centerObject(roi,10);
+
+// Train the clusterer
+var training = image.sample({region: region, scale: 30, numPixels: 5000});
+var clusterer = ee.Clusterer.wekaKMeans(15).train(training);
+var result = image.cluster(clusterer);
+
+//Add results to the Map
+Map.addLayer(image,imageVisParam,'Landsat-image');
+Map.addLayer(result.randomVisualizer(),{},'Unsupervised-classification');
+
+// Write me at kshitijdahal3@gmail.com//
