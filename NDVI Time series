@@ -1,0 +1,71 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var Modis = ee.ImageCollection("MODIS/006/MOD13Q1"),
+    HKM_region = 
+    /* color: #d63000 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[-16.679687500000004, 60.432423697391954],
+          [-16.679687500000004, 1.9708299871285284],
+          [145.390625, 1.9708299871285284],
+          [145.390625, 60.432423697391954]]], null, false),
+    rect = 
+    /* color: #98ff00 */
+    /* shown: false */
+    /* displayProperties: [
+      {
+        "type": "rectangle"
+      }
+    ] */
+    ee.Geometry.Polygon(
+        [[[54.33593749999999, 44.92922190743124],
+          [54.33593749999999, -1.9834630962570652],
+          [132.03124999999994, -1.9834630962570652],
+          [132.03124999999994, 44.92922190743124]]], null, false);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
+
+
+var region = HKM_region;
+// The region of interest (Hindu Kush Himalaya) 
+// var rect = ee.Geometry.Rectangle({
+//   coords: [[58, 6], [102, 38]],
+//   geodesic: false
+// });
+Map.centerObject(rect, 3); // Zooms to the study area at level 3
+// Select MODIS vegetation composites from 2018.
+var collection = Modis.filterBounds(HKM_region)
+  .filterDate('2018-01-01', '2019-01-01')
+  .select('NDVI');
+// Add the first image to the map, just as a preview.
+var im = ee.Image(collection.first());
+Map.addLayer(im, {}, "Preview Image",false);
+Map.addLayer(rect, {}, "Zoom Level",false);
+var image = ee.Image().toByte()
+    //.paint(HKM_region, 'fill') // Get color from property named 'fill'
+    .paint(HKM_region, 1, 2); // Outline using color 3, width 5.
+    
+Map.addLayer(image, {palette: ['FE230D', 'F9380F', 'F9380F', 'F9380F'], max: 0.5, opacity: 0.5,},"HKM Region",false);
+// Visualization parameters.
+var args = {
+  crs: 'EPSG:3857',  // Maps Mercator
+  dimensions: '600',
+  region: rect,
+  min: -2000,
+  max: 10000,
+  palette: 'black, blanchedalmond, green, green',
+  framesPerSecond: 10,
+};
+// Create a video thumbnail and add it to the map.
+var thumb = ui.Thumbnail({
+  // Specifying a collection for "image" animates the sequence of images.
+  image: collection,
+  params: args,
+  style: {
+    position: 'bottom-right',
+    width: '700px'
+  }});
+Map.add(thumb);
