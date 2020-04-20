@@ -3,16 +3,89 @@ var imageCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
     roi = /* color: #d63000 */ee.Geometry.Point([87.2560143033203, 26.447614584117837]),
     imageVisParam = {"opacity":1,"bands":["B4","B3","B2"],"min":0.06005484238266945,"max":0.17998048663139343,"gamma":1};
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
-// Project- Landuse/ Landcover Mapping using Landsat image//
-//Instructor- Kshitij Dahal//
-//Email- kshitijdahal3@gmail.com//
-// Select an image from collection
+
+/* 
+Project: Landuse classification map-- Using Lansat image bands-- Supervised training 
+Author: Kshitij Dahal (Email: kshitijdahal3@gmail.com) 
+Natural Hazards Section, Himalayan Risk Research Institute(HRI) 
+Department of Civil Engineering, Khwopa College of Engineering 
+*/
+
+// Filter the image collection
 var landsat = imageCollection.filterDate('2015-01-01','2015-12-10')
               .filterBounds(roi).sort('CLOUD_COVER').first();
-// Print the information about selected image
-print ('Selected image is: ', landsat);
-// Add selected image to map
-Map.addLayer(landsat,imageVisParam,'Landsat-image');
-Map.addLayer(landsat,{ bands:'B5,B6,B2', min: 0, max: 0.3},'Landsat-false-color');
-// Set the viewing window of map
-Map.centerObject(roi,11);
+        
+// Add boundary to the map  
+Map.addLayer(brt,{palette: 'red'},'Biratnagar Boundary')    
+
+//Map.addLayer(landsat,{},'landsat');
+var image = landsat.clip(brt);
+Map.addLayer(image, imageVisParam, 'Landsat-true-Biratnagar',false);
+Map.addLayer(image, {bands: 'B6,B5,B2', min: 0, max: 0.3},'Landsat-false-color',false);
+
+// Day-2------------
+
+// Map cenetering
+Map.centerObject(brt,12);
+
+// Merging the training set for feeding to model
+var trainingfc= urban.merge(water).merge(vegetation).merge(baren_land);
+
+// Select the bands as parameters for machine learning algorithm
+var bands = ['B2','B3','B4','B5','B6','B7','B8','B9','B10','B11'];
+
+// Extract the values of different bands 
+var training= image.select(bands).sampleRegions({
+  collection: trainingfc,
+  properties: ['landcover'],
+  scale: 30
+});
+
+// Splitting the data-- to check the accuracy-- using random sampling technique
+var withRandom = training.randomColumn('random');
+// We want to reserve some of the data for testing, to avoid overfitting the model.
+var split = 0.7;  // Roughly 70% training, 30% testing.
+var trainingPartition = withRandom.filter(ee.Filter.lt('random', split));
+var testingPartition = withRandom.filter(ee.Filter.gte('random', split));
+
+// Model set up
+var classifier = ee.Classifier.smileCart().train({
+ features: trainingPartition,
+ classProperty: 'landcover',
+ inputProperties: bands
+});
+
+// Model run
+var classified = image.select(bands).classify(classifier);
+
+// Add classified layer to the map
+Map.addLayer(classified, {min: 0, max: 3, palette: ['ff2c0a', '#100cff', '#10ff59','#eaf54a']}, 'classification');
+
+// Get a confusion matrix representing resubstitution accuracy.
+var trainAccuracy = classifier.confusionMatrix();
+print('Resubstitution error matrix: ', trainAccuracy);
+print('Training overall accuracy: ', trainAccuracy.accuracy());
+
+// Information about testing data
+print ('Data before classification',testingPartition);
+
+// run testing data
+var test = testingPartition.classify(classifier);
+
+// Information after run
+print (' The classified set"',test);
+
+// Print the confusion matrix.
+var confusionMatrix = test.errorMatrix('landcover', 'classification');
+print('Confusion Matrix', confusionMatrix);
+print('Validation accuracy: ',confusionMatrix.accuracy())
+
+// Export the classified landuse map to google drive and download to see on ArcGIS/QGIS
+Export.image.toDrive({
+ image: classified,
+ description:"Landcover2015",
+ scale: 30,
+ region:brt,
+ maxPixels:3e10
+});
+// Done-- for any queries write me at kshitijdahal3@gmail.com!!
