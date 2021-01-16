@@ -4,12 +4,7 @@ var imageCollection = ee.ImageCollection("LANDSAT/LC08/C01/T1_TOA"),
     imageVisParam = {"opacity":1,"bands":["B4","B3","B2"],"min":0.06005484238266945,"max":0.17998048663139343,"gamma":1};
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 
-/* 
-Project: Landuse classification map-- Using Lansat image bands-- Supervised training 
-Author: Kshitij Dahal (Email: kshitijdahal3@gmail.com) 
-Natural Hazards Section, Himalayan Risk Research Institute(HRI) 
-Department of Civil Engineering, Khwopa College of Engineering 
-*/
+
 
 // Filter the image collection
 var landsat = imageCollection.filterDate('2015-01-01','2015-12-10')
